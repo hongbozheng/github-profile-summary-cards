@@ -11,7 +11,7 @@ export default function request(header: any, data: any): AxiosPromise<any> {
         headers: header,
         data: data,
         raxConfig: {
-            retry: 10,
+            retry: 3,
             noResponseRetries: 3,
             retryDelay: 1000,
             backoffType: 'linear',

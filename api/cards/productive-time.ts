@@ -1,10 +1,10 @@
-import {getProductiveTimeSVGWithThemeName} from '../../src/cards/productive-time-card';
-import {changToNextGitHubToken} from '../utils/github-token-updater';
-import {getErrorMsgCard} from '../utils/error-card';
-import type {VercelRequest, VercelResponse} from '@vercel/node';
+import { getProductiveTimeSVGWithThemeName } from '../../src/cards/productive-time-card';
+import { changToNextGitHubToken } from '../utils/github-token-updater';
+import { getErrorMsgCard } from '../utils/error-card';
+import type { VercelRequest, VercelResponse } from '@vercel/node';
 
 export default async (req: VercelRequest, res: VercelResponse) => {
-    const {username, theme = 'default', utcOffset = '0'} = req.query;
+    const { username, theme = 'default', utcOffset = '0' } = req.query;
     if (typeof theme !== 'string') {
         res.status(400).send('theme must be a string');
         return;
@@ -23,13 +23,18 @@ export default async (req: VercelRequest, res: VercelResponse) => {
             try {
                 const cardSVG = await getProductiveTimeSVGWithThemeName(username, theme, Number(utcOffset));
                 res.setHeader('Content-Type', 'image/svg+xml');
+                res.setHeader('Cache-Control', 'public, max-age=14400, s-maxage=86400');
                 res.send(cardSVG);
                 return;
             } catch (err: any) {
                 console.log(err.message);
                 // We update github token and try again, until getNextGitHubToken throw an Error
-                changToNextGitHubToken(tokenIndex);
-                tokenIndex += 1;
+                if (err.response && (err.response.status === 403 || err.response.status === 401)) {
+                    changToNextGitHubToken(tokenIndex);
+                    tokenIndex += 1;
+                } else {
+                    throw err;
+                }
             }
         }
     } catch (err: any) {
